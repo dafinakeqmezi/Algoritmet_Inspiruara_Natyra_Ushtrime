@@ -1,16 +1,16 @@
 <table border="0">
  <tr>
-    <td><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/University_of_Prishtina_logo.svg/1200px-University_of_Prishtina_logo.svg.png" width="150" alt="University Logo" /></td>
+    <td><img src="https://github.com/user-attachments/assets/9002855f-3f97-4b41-a180-85d1e24ad34a" alt="University Logo" width="110" align="left"/></td>
     <td>
-      <p>Universiteti i Prishtinës</p>
-      <p>Fakulteti i Inxhinierisë Elektrike dhe Kompjuterike</p>
-      <p>Inxhinieri Kompjuterike dhe Softuerike - Programi Master</p>
-      <p>Profesor: Prof. Dr. Kadri Sylejmani</p>
-      <p>Asistent: MSc. Labeat Arbneshi</p>
+      <p><strong>University of Prishtina</strong></p>
+      <p>Faculty of Electrical and Computer Engineering</p>
+      <p>Computer and Software Engineering — Master's Program</p>
+      <p>Professor: Prof. Kadri Sylejmani</p>
+      <p>Assistant: Prof. Labeat Arbneshi</p>
+      <p>Course: Algoritmet e Inspiruara nga Natyra</p>
     </td>
  </tr>
 </table>
-
 # TV Channel Scheduling Optimization — Phase 1 + Phase 2
 
 ## 1. Introduction
@@ -83,38 +83,46 @@ Endrita's beam search uses `beam_width = 100`, `lookahead = 4`, `density_percent
 
 ```
 greedy_repo/
-├── parser/, models/, utils/, validator/, serializer/   # original code (unchanged)
-├── scheduler/greedy_scheduler.py                       # Phase 1 baseline (unchanged)
+├── parser/, models/, utils/, validator/, serializer/   
+├── scheduler/greedy_scheduler.py                       
 ├── ga/
-│   ├── chromosome.py        # encoding, decoding, validation/repair, fitness
-│   ├── operators.py         # selection, crossover, mutation
-│   ├── ga_solver.py         # main GA loop (GASolver + GAConfig + GARunResult)
-│   └── config.py            # parameters for the 3 experiments
+│   ├── chromosome.py        
+│   ├── operators.py        
+│   ├── ga_solver.py         
+│   └── config.py           
 ├── data/
-│   ├── input/               # all 17 input JSON instances
-│   └── output/              # 17 per-instance Solution JSONs from greedy
-│                            # (filename pattern: {base}_output_greedyscheduler_{score}.json)
-├── run_phase1_comparison.py # runs greedy + Endrita (subprocess) -> comparison table
-├── run_phase2_ga.py         # multiprocessing driver for 510 GA executions
-├── build_results_tables.py  # builds per-experiment + final comparison tables
-├── plot_convergence.py      # generates matplotlib convergence plots
+│   ├── input/               
+│   └── output/              
+│                            
+├── run_phase1_comparison.py 
+├── run_phase2_ga.py         
+├── build_results_tables.py  
+├── plot_convergence.py      
 └── results/
-    ├── results_phase1_greedy.csv           # 17 rows
-    ├── results_phase1_endrita.csv           # 17 rows (incl. timeouts)
+    ├── results_phase1_greedy.csv           
+    ├── results_phase1_endrita.csv          
     ├── results_phase1_comparison.csv / .md
+<<<<<<< HEAD
     ├── results_phase2_ga.csv               # 510 rows (1 per (instance, experiment, run))
     ├── table_ga_per_experiment.csv / .md   # 17×3 stats (best / avg / worst / std)
     ├── table_final_comparison.csv / .md    # Greedy | Endrita | GA-best | Δ%
     ├── history/                            # 510 per-run convergence logs (gen, best_score, avg_score)
     ├── convergence/                        # 51 per-(inst,exp) run-0 gen logs (extra elapsed_s column)
     └── plots/                              # 17 per-instance PNGs + 1 representative
+=======
+    ├── results_phase2_ga.csv               
+    ├── table_ga_per_experiment.csv / .md   
+    ├── table_final_comparison.csv / .md    
+    ├── convergence/                        
+    └── plots/                              
+>>>>>>> c3c1baa2ac7ef7760899a4364df939541a4e4a78
 
-endrita_repo/                                # comparison repo (not modified by us)
+endrita_repo/                                
 ├── data/
-│   ├── input/               # 17 input JSON instances (same set as Greedy's)
-│   └── output/              # 12 per-instance Solution JSONs from beam search
-│                            # (5 missing = beam search timed out at 10 min on those inputs)
-└── run_batch.py             # batch runner we added; honors --force / --no-skip-timeouts
+│   ├── input/               
+│   └── output/              
+│                            
+└── run_batch.py             
 ```
 
 ### 3.2 Chromosome encoding — variable-length list of scheduled programs
@@ -392,10 +400,16 @@ python run_phase1_comparison.py --skip-endrita --instance canada_pw
 
 python run_phase2_ga.py
 python run_phase2_ga.py --instance toy --runs 1                  
+<<<<<<< HEAD
 python run_phase2_ga.py --instance canada_pw                     
 python run_phase2_ga.py --experiment E2_exploration              
 python run_phase2_ga.py --workers 4                              
 
+=======
+python run_phase2_ga.py --instance canada_pw                    
+python run_phase2_ga.py --experiment E2_exploration             
+python run_phase2_ga.py --workers 4                              
+>>>>>>> c3c1baa2ac7ef7760899a4364df939541a4e4a78
 
 python build_results_tables.py
 python plot_convergence.py

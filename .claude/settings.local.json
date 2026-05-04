@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(python -)",
-      "Bash(PYTHONIOENCODING=utf-8 python build_results_tables.py)",
-      "Bash(PYTHONIOENCODING=utf-8 python plot_convergence.py)"
-    ]
-  }
-}
