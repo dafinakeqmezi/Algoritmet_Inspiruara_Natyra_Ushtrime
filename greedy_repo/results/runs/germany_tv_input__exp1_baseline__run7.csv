@@ -1,0 +1,12 @@
+program_id,channel_id,start,end,fitness
+ARD_news_mo,0,480,540,110
+ARD_morningmag,0,540,600,60
+RTL_RealityShow,2,600,660,55
+ARD_lunch_news,0,660,720,75
+WDR_afternoon_news,4,720,780,65
+ZDF_prime_movie,1,780,900,78
+ZDF_prime_news,1,900,930,80
+ZDF_ent,1,930,1020,110
+ZDF_late_movie,1,1020,1240,130
+ARD_late_show,0,1260,1320,55
+ARD_night_music,0,1320,1380,75

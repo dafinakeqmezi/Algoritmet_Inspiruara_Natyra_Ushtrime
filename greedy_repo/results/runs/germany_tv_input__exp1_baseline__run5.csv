@@ -1,0 +1,13 @@
+program_id,channel_id,start,end,fitness
+ARD_news_mo,0,480,540,110
+P7_detective,3,540,600,55
+P7_comedy,3,600,660,70
+P7_lunch_talk,3,660,720,80
+ARD_afternoonmag,0,720,780,55
+P7_evening_show,3,780,900,97
+ZDF_prime_news,1,900,930,70
+ZDF_ent,1,930,1020,110
+RTL_trailer,2,1020,1080,30
+P7_latenight_comedy,3,1080,1200,60
+P7_music_playlist,3,1200,1320,80
+ARD_night_music,0,1320,1380,65

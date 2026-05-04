@@ -1,0 +1,23 @@
+# Phase 1 Comparison — Greedy vs Endrita (BeamSearch)
+
+| instance | score_greedy | score_endrita | best |
+|---|---:|---:|:---:|
+| australia_iptv | 1346 | 4117 | Endrita |
+| canada_pw | 1070 | 4628 | Endrita |
+| china_pw | 1296 |  | missing |
+| croatia_tv_input | 1278 | 2203 | Endrita |
+| france_iptv | 1215 | 4370 | Endrita |
+| germany_tv_input | 725 | 1553 | Endrita |
+| kosovo_tv_input | 1160 | 2587 | Endrita |
+| netherlands_tv_input | 1133 | 2636 | Endrita |
+| singapore_pw | 1223 | 4316 | Endrita |
+| spain_iptv | 978 | 4555 | Endrita |
+| toy | 380 | 380 | tie |
+| uk_iptv | 1491 |  | missing |
+| uk_tv_input | 1098 | 2266 | Endrita |
+| us_iptv | 1513 |  | missing |
+| usa_tv_input | 1711 | 3601 | Endrita |
+| youtube_gold | 13058 |  | missing |
+| youtube_premium | 19900 |  | missing |
+
+**Summary:** Greedy wins on 0, Endrita wins on 11, ties on 1 (out of 17).

@@ -1,0 +1,17 @@
+program_id,channel_id,start,end,fitness
+KTV_1,2,420,480,93
+RTK1_2,0,480,540,99
+RTK1_3,0,540,600,98
+TVPrishtina_3,12,600,660,81
+TVPrishtina_4,12,660,720,99
+KlanKosova_6,3,720,750,50
+KlanKosova_7,3,750,840,71
+KlanKosova_8,3,840,930,100
+KlanKosova_9,3,930,1020,94
+Rubikon_9,7,1020,1050,94
+RTK2_8,1,1050,1140,98
+MusicKosova_12,10,1140,1200,87
+RTVDukagjini_12,6,1200,1260,122
+KlanKosova_14,3,1290,1320,95
+RTV21_13,5,1320,1350,60
+RTV21_14,5,1350,1380,69

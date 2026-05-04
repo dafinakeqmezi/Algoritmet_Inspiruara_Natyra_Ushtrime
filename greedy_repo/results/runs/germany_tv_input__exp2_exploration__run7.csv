@@ -1,0 +1,12 @@
+program_id,channel_id,start,end,fitness
+ZDF_Heute,1,480,540,108
+ZDF_Morgenmagazin,1,540,600,62
+ARD_documentary,0,600,660,60
+ARD_lunch_news,0,660,720,85
+ARD_afternoonmag,0,720,780,65
+ZDF_prime_movie,1,780,900,78
+ZDF_prime_news,1,900,930,80
+ZDF_ent,1,930,1020,110
+ARD_movie,0,1020,1260,125
+ARD_late_show,0,1260,1320,65
+ARD_night_music,0,1320,1380,75

@@ -1,0 +1,7 @@
+instance,experiment,run,seed,best_score,avg_score_final_gen,generations_completed,time_seconds
+toy,E1_baseline,0,0,380,309.5,100,0.62
+toy,E1_baseline,1,1,380,314.8,100,0.564
+toy,E2_exploration,0,0,380,317.0,100,1.681
+toy,E2_exploration,1,1,380,320.15,100,2.269
+toy,E3_exploitation,0,0,380,370.55,150,3.053
+toy,E3_exploitation,1,1,380,368.5,150,2.701
