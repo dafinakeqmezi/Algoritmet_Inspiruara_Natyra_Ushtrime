@@ -12,7 +12,7 @@ EXPERIMENTS = [
     GAConfig(
         name="E1_baseline",
         population_size=50,
-        generations=100,
+        generations=200,
         crossover_rate=0.8,
         mutation_rate=0.10,
         tournament_size=3,
@@ -24,7 +24,7 @@ EXPERIMENTS = [
     GAConfig(
         name="E2_exploration",
         population_size=100,
-        generations=100,
+        generations=200,
         crossover_rate=0.8,
         mutation_rate=0.15,
         tournament_size=3,
@@ -36,7 +36,7 @@ EXPERIMENTS = [
     GAConfig(
         name="E3_exploitation",
         population_size=100,
-        generations=150,
+        generations=400,
         crossover_rate=0.9,
         mutation_rate=0.15,
         tournament_size=3,

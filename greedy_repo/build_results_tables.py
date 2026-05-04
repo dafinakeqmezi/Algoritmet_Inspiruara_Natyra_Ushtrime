@@ -38,9 +38,13 @@ def load_ga_runs() -> dict[tuple[str, str], list[dict]]:
         return grouped
     with open(GA_CSV, newline="", encoding="utf-8") as fh:
         for row in csv.DictReader(fh):
+            try:
+                t = float(row["time_seconds"])
+            except (ValueError, KeyError):
+                t = 0.0  # history files don't carry timing
             grouped[(row["instance"], row["experiment"])].append({
                 "best_score": int(row["best_score"]),
-                "time_seconds": float(row["time_seconds"]),
+                "time_seconds": t,
                 "generations_completed": int(row["generations_completed"]),
             })
     return grouped

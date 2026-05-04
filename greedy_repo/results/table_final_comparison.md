@@ -4,22 +4,22 @@ Improvement is measured against the **better** of the two Phase 1 baselines (max
 
 | instance | Greedy | Endrita (beam) | GA best | Δ vs best baseline |
 |---|---:|---:|---:|---:|
-| australia_iptv | 1346 | 4117 | 3330 | -19.12% |
-| canada_pw | 1070 | 4628 | 4073 | -11.99% |
-| china_pw | 1296 |  | 1921 | 48.23% |
-| croatia_tv_input | 1278 | 2203 | 2034 | -7.67% |
-| france_iptv | 1215 | 4370 | 2537 | -41.95% |
-| germany_tv_input | 725 | 1553 | 932 | -39.99% |
-| kosovo_tv_input | 1160 | 2587 | 1691 | -34.63% |
-| netherlands_tv_input | 1133 | 2636 | 1825 | -30.77% |
-| singapore_pw | 1223 | 4316 | 3640 | -15.66% |
-| spain_iptv | 978 | 4555 | 3071 | -32.58% |
+| australia_iptv | 1346 | 4117 | 3103 | -24.63% |
+| canada_pw | 1070 | 4628 | 3266 | -29.43% |
+| china_pw | 1296 |  | 2086 | 60.96% |
+| croatia_tv_input | 1278 | 2203 | 1733 | -21.33% |
+| france_iptv | 1215 | 4370 | 2335 | -46.57% |
+| germany_tv_input | 725 | 1553 | 937 | -39.67% |
+| kosovo_tv_input | 1160 | 2587 | 1518 | -41.32% |
+| netherlands_tv_input | 1133 | 2636 | 1539 | -41.62% |
+| singapore_pw | 1223 | 4316 | 2792 | -35.31% |
+| spain_iptv | 978 | 4555 | 2700 | -40.72% |
 | toy | 380 | 380 | 380 | 0.0% |
-| uk_iptv | 1491 |  | 3268 | 119.18% |
-| uk_tv_input | 1098 | 2266 | 1408 | -37.86% |
-| us_iptv | 1513 |  | 2519 | 66.49% |
-| usa_tv_input | 1711 | 3601 | 1973 | -45.21% |
-| youtube_gold | 13058 |  | 15822 | 21.17% |
-| youtube_premium | 19900 |  | 22467 | 12.9% |
+| uk_iptv | 1491 |  | 3151 | 111.33% |
+| uk_tv_input | 1098 | 2266 | 1433 | -36.76% |
+| us_iptv | 1513 |  | 3003 | 98.48% |
+| usa_tv_input | 1711 | 3601 | 1775 | -50.71% |
+| youtube_gold | 13058 |  | 13793 | 5.63% |
+| youtube_premium | 19900 |  | 23376 | 17.47% |
 
 **Summary:** GA beats best Phase 1 baseline on 5, ties on 1, loses on 11 (of 17).
