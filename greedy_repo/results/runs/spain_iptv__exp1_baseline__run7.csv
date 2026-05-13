@@ -1,8 +1,8 @@
 program_id,channel_id,start,end,fitness
 m_laligatv3_es_m_laliga_3_2026-01-04_0000,156,0,720,583
-castillalamanchatv_primera_federaci_n_t25_2_2026-01-04_0720,55,720,840,143
-laligatvbar3_es_pr_ximo_partido_zaragoza_2026-01-04_0840,115,840,1110,246
-laligatvbar2_es_laliga_2026-01-04_1110,114,1110,1230,192
+laligatvbar3_es_primera_federaci_n_2026-01-04_0720,115,720,840,144
+laligatvbar3_es_pr_ximo_partido_zaragoza_2026-01-04_0840,115,840,1110,256
+laligatvbar3_es_laliga_hypermotion_2026-01-04_1110,115,1110,1230,202
 telesur_es_telesur_noticias_2026-01-04_1230,255,1230,1260,129
 aragontv_es_arag_n_noticias_2_edici__2026-01-04_1260,17,1260,1290,128
 bbcworld_es_discovering_the_world_s__2026-01-04_1290,28,1290,1320,82

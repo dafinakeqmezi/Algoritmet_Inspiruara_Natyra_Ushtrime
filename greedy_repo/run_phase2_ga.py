@@ -17,9 +17,10 @@ from utils.utils import Utils
 from ga.config import EXPERIMENTS
 from ga.ga_solver import GASolver
 
-INSTANCES_DIR = REPO_ROOT / "data" / "input"     
+INSTANCES_DIR = REPO_ROOT / "data" / "input"
 RESULTS_DIR = REPO_ROOT / "results"
 CONVERGENCE_DIR = RESULTS_DIR / "convergence"
+HISTORY_DIR = RESULTS_DIR / "history"
 RUNS_DIR = RESULTS_DIR / "runs"
 CSV_PATH = RESULTS_DIR / "results_phase2_ga.csv"
 
@@ -55,6 +56,17 @@ def run_one_task(args):
     ga = GASolver(instance, config, seed=seed)
     result = ga.run()
 
+    HISTORY_DIR.mkdir(parents=True, exist_ok=True)
+    exp_tag = _exp_filename_tag(config.name)
+    hist_path = HISTORY_DIR / f"{instance_path.stem}__{exp_tag}__run{run_idx + 1}.csv"
+    with open(hist_path, "w", newline="", encoding="utf-8") as fh:
+        w = csv.writer(fh)
+        w.writerow(["generation", "best_score", "avg_score"])
+        for e in result.gen_log:
+            if e.gen == 0:
+                continue  
+            w.writerow([e.gen, e.best_so_far, round(e.gen_avg, 2)])
+
     if run_idx == 0 and result.gen_log:
         CONVERGENCE_DIR.mkdir(parents=True, exist_ok=True)
         log_path = CONVERGENCE_DIR / f"{instance_path.stem}__{config.name}.csv"
@@ -64,9 +76,8 @@ def run_one_task(args):
             for e in result.gen_log:
                 w.writerow([e.gen, e.best_so_far, e.gen_best, round(e.gen_avg, 2), round(e.elapsed_s, 3)])
 
-
     RUNS_DIR.mkdir(parents=True, exist_ok=True)
-    run_filename = f"{instance_path.stem}__{_exp_filename_tag(config.name)}__run{run_idx + 1}.csv"
+    run_filename = f"{instance_path.stem}__{exp_tag}__run{run_idx + 1}.csv"
     run_path = RUNS_DIR / run_filename
     with open(run_path, "w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)

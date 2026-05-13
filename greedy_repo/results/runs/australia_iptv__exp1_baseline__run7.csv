@@ -4,10 +4,11 @@ program_id,channel_id,start,end,fitness
 aljazeera_au_news_live_2026-01-04_0300,138,300,330,76
 7darwin_au_the_ashes_aus_v_eng_t5_d_2026-01-04_0330,30,330,479,303
 7darwin_au_seven_news_2026-01-04_0479,30,479,540,203
-abchobart_au_abc_news_2026-01-04_0540,99,540,571,90
-9go_canberra_au_ncis_2026-01-04_0571,63,571,630,197
-10bolddarwin_au_ncis_2026-01-04_0661,2,661,720,198
-10bolddarwin_au_ncis_2026-01-04_0720,2,720,775,67
+7flixperth_au_jabba_s_school_holiday_m_2026-01-04_0570,34,570,600,90
+sonlife_au_crossfire_service_2026-01-04_0600,458,600,660,195
+nsw_sydneyfoxsport_full_time_live_4_1_26_2026-01-04_0660,350,660,690,198
+bloombergtelevisio_leaders_with_francine_la_2026-01-04_0690,145,690,720,83
+10bolddarwin_au_ncis_2026-01-04_0720,2,720,775,57
 10bolddarwin_au_ncis_2026-01-04_0775,2,775,831,62
 10bolddarwin_au_blue_bloods_2026-01-04_0831,2,831,888,79
 10bolddarwin_au_blue_bloods_2026-01-04_0888,2,888,945,65

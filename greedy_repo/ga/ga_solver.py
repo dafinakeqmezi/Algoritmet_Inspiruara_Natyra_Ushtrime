@@ -60,25 +60,26 @@ class GASolver:
 
     # -------- initial population --------
 
-    def _build_initial_population(self) -> List[Chromosome]:
+    def _build_initial_population(self, t0: float = 0.0, cap: float = float("inf")) -> List[Chromosome]:
+        """Build the initial population while respecting the wall-time cap.
+
+        The greedy seed (when enabled) and each random individual are added one
+        at a time, checking elapsed wall-time after every insertion. For very
+        large instances (e.g. us_iptv with 1000+ channels) building 100 random
+        chromosomes alone can exceed 5 minutes — we return a smaller-but-valid
+        population in that case so the run still respects the cap.
+        """
         pop: List[Chromosome] = []
-        if self.config.seed_with_greedy:
+
+        def time_up() -> bool:
+            return time.perf_counter() - t0 >= cap
+
+        if self.config.seed_with_greedy and not time_up():
             try:
-                seed = self.encoder.seed_with_greedy_solution()
-                # Per-run perturbation of the greedy seed: keep a random prefix
-                # and re-extend the tail with the randomized greedy (top-K + rng)
-                # so each run starts from a different but high-quality individual.
-                # Without this, every run shares the deterministic greedy seed
-                # and small instances collapse to identical schedules.
-                if seed:
-                    k = self.rng.randint(0, len(seed))
-                    prefix = list(seed[:k])
-                    start_time = prefix[-1].end if prefix else self.encoder.opening
-                    seed = self.encoder._greedy_extend(prefix, start_time, rng=self.rng)
-                pop.append(seed)
+                pop.append(self.encoder.seed_with_greedy_solution())
             except Exception:
                 pass  # fall back to fully-random init
-        while len(pop) < self.config.population_size:
+        while len(pop) < self.config.population_size and not time_up():
             pop.append(self.encoder.random_chromosome(self.rng))
         return pop
 
@@ -88,7 +89,21 @@ class GASolver:
         cfg = self.config
         t0 = time.perf_counter()
 
-        population = self._build_initial_population()
+        # Pass the wall-time cap so initial-population building can also bail
+        # out early on very large instances; otherwise creating 100 random
+        # chromosomes alone can exceed cfg.time_limit_seconds.
+        population = self._build_initial_population(t0=t0, cap=cfg.time_limit_seconds)
+        if not population:
+            # Even the very first individual didn't fit in the cap — return an
+            # empty schedule rather than running an evolution loop on nothing.
+            return GARunResult(
+                best_score=0,
+                best_solution=Solution(scheduled_programs=[], total_score=0),
+                avg_score_final_gen=0.0,
+                generations_completed=0,
+                time_seconds=time.perf_counter() - t0,
+                gen_log=[],
+            )
         fitnesses = [self.encoder.fitness(c) for c in population]
 
         best_idx = max(range(len(population)), key=lambda i: fitnesses[i])

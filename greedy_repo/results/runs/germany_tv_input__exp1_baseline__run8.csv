@@ -2,7 +2,7 @@ program_id,channel_id,start,end,fitness
 ARD_news_mo,0,480,540,110
 ARD_morningmag,0,540,600,60
 ARD_documentary,0,600,660,70
-RTL_LunchSoap,2,660,720,65
+ARD_lunch_news,0,660,720,85
 WDR_afternoon_news,4,720,780,65
 P7_evening_show,3,780,900,97
 ZDF_prime_news,1,900,930,70

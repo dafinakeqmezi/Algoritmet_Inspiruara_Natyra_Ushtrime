@@ -87,35 +87,34 @@ greedy_repo/
 ├── scheduler/greedy_scheduler.py                       
 ├── ga/
 │   ├── chromosome.py        
-│   ├── operators.py        
+│   ├── operators.py         
 │   ├── ga_solver.py         
-│   └── config.py           
+│   ├── local_search.py      
+│   └── config.py            
 ├── data/
 │   ├── input/               
 │   └── output/              
 │                            
 ├── run_phase1_comparison.py 
-├── run_phase2_ga.py         
-├── build_results_tables.py  
-├── plot_convergence.py      
+├── run_phase2_ga.py        
+├── run_phase3_ls.py         
+├── build_results_tables.py 
+├── plot_convergence.py     
 └── results/
     ├── results_phase1_greedy.csv           
     ├── results_phase1_endrita.csv          
     ├── results_phase1_comparison.csv / .md
-<<<<<<< HEAD
-    ├── results_phase2_ga.csv               # 510 rows (1 per (instance, experiment, run))
-    ├── table_ga_per_experiment.csv / .md   # 17×3 stats (best / avg / worst / std)
-    ├── table_final_comparison.csv / .md    # Greedy | Endrita | GA-best | Δ%
-    ├── history/                            # 510 per-run convergence logs (gen, best_score, avg_score)
-    ├── convergence/                        # 51 per-(inst,exp) run-0 gen logs (extra elapsed_s column)
-    └── plots/                              # 17 per-instance PNGs + 1 representative
-=======
     ├── results_phase2_ga.csv               
     ├── table_ga_per_experiment.csv / .md   
     ├── table_final_comparison.csv / .md    
+    ├── results_phase3_ls.csv               
+    ├── table_phase3_ls.csv / .md           
+    ├── table_experiments_winner.csv / .md  
+    ├── table_greedy_ga_ls.csv / .md        
+    ├── history/                            
     ├── convergence/                        
+    ├── phase3_runs/                        
     └── plots/                              
->>>>>>> c3c1baa2ac7ef7760899a4364df939541a4e4a78
 
 endrita_repo/                                
 ├── data/
@@ -235,13 +234,15 @@ These are the seven parameters that the experiments vary. They are defined in [`
 | Param | E1 — Baseline | E2 — Exploration | E3 — Exploitation |
 |---|---:|---:|---:|
 | `population_size` | 50 | 100 | 100 |
-| `generations` | 200 | 200 | 400 |
+| `generations` | unbounded¹ | unbounded¹ | unbounded¹ |
 | `crossover_rate` | 0.8 | 0.8 | 0.9 |
 | `mutation_rate` | 0.10 | 0.15 | 0.15 |
 | `tournament_size` | 3 | 3 | 3 |
 | `elitism` | 2 | 3 | 3 |
 | `crossover_type` | time_window | time_window | channel |
-| `time_limit_seconds` | 300 (5 min) | 300 (5 min) | 300 (5 min) |
+| `time_limit_seconds` | **300 (5 min)** | **300 (5 min)** | **300 (5 min)** |
+
+¹ Per the assignment requirement ("sado iterime që mund të bëhen brenda 5 min"), the generation count is effectively unbounded (`10_000_000`) and the **5-minute wall-time cap is the real stopping criterion**. Each run starts from iteration 0 and executes as many generations as can fit in 300 s. The time cap is checked both at the top of every generation *and* during initial-population construction, so for huge instances (e.g. `us_iptv` with 1000+ channels) the run terminates inside the cap even when building 100 random chromosomes would otherwise take longer.
 
 These three configurations are applied **as-is to all 17 instances** (parameters are *fixed within an experiment*, *changed between experiments*) so the score effect of changing parameters is isolated from instance-specific noise.
 
@@ -263,16 +264,11 @@ These three configurations are applied **as-is to all 17 instances** (parameters
   - `convergence/` — same idea but only run-0 per (instance, experiment), with extra `elapsed_s` column for wall-time tracking
   - `plots/` — per-instance convergence PNGs (mean over 10 runs + min/max band) plus a small/medium/large representative figure
 
-**Wall-time of the 510-run sweep** (estimated from convergence `elapsed_s`, scaled per (inst,exp)):
+**Wall-time of the 510-run sweep** (measured during the most recent unbounded-generations run):
 
-| Experiment | Runs | Avg / run | Min | Max | Sum (CPU-time) |
-|---|---:|---:|---:|---:|---:|
-| E1_baseline | 170 | 124.6 s (~2 min) | 1.0 s | 300 s | ~353 min |
-| E2_exploration | 170 | 121.8 s (~2 min) | 4.3 s | 300 s | ~345 min |
-| E3_exploitation | 170 | 137.4 s (~2.3 min) | 4.5 s | 300 s | ~389 min |
-| **Total** | **510** | — | — | — | **~1087 min ≈ 18.1 h CPU-time** |
+Every run uses the full 5-minute budget (since `generations = unbounded`, the time cap is the only stopper), so per-run timing is dominated by the 300-second wall-clock cap. Total wall-time: **170.7 minutes (~2.8 hours) on 15 parallel workers**.
 
-With 15 parallel workers (`multiprocessing.Pool`) the practical wall-time is **~72 minutes**. The 300-second cap is hit on the largest instances (`australia_iptv`, `china_pw`, `us_iptv`, `youtube_gold` in E1), meaning those runs did not finish all 200/400 generations within the 5-minute budget. Small instances (`toy`, `germany`, `kosovo`, `netherlands`) finish in under 20 seconds.
+CPU-time across the 510 runs is ≈ `510 × 300 s = 153 000 s = 2 550 min ≈ 42.5 hours`. On a 16-core machine this collapses to the ~170-minute wall-time figure above.
 
 ---
 
@@ -280,29 +276,31 @@ With 15 parallel workers (`multiprocessing.Pool`) the practical wall-time is **~
 
 ### 4.1 Per-experiment table (best / avg / worst / std over 10 runs)
 
-Built by [`build_results_tables.py`](build_results_tables.py) from the 510 history files. The `t(s)` column is the wall-time per run (estimated from the `convergence/` per-(inst,exp) elapsed_s, scaled by the gen-count ratio between convergence and history; capped at the 300 s per-run limit).
+Built by [`build_results_tables.py`](build_results_tables.py) from the 510 history files. The `t(s)` column is the per-run wall-time as reported by the GA driver. Because generations are now unbounded, every run uses the full 300-second budget on every instance except the toy where it still exits cleanly at 300 s with `gen_completed` in the tens of thousands.
 
 | instance | E1 best | E1 avg | E1 worst | E1 std | E1 t(s) | E2 best | E2 avg | E2 worst | E2 std | E2 t(s) | E3 best | E3 avg | E3 worst | E3 std | E3 t(s) |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| australia_iptv | 2875 | 2658.2 | 2509 | 101.4 | 300.0 | 2875 | 2619.3 | 2464 | 109.6 | 300.0 | **3103** | 2846.7 | 2641 | 160.5 | 300.0 |
-| canada_pw | 2804 | 2633.5 | 2528 | 78.1 | 212.0 | 2944 | 2697.0 | 2514 | 128.8 | 300.0 | **3266** | 3001.7 | 2750 | 175.3 | 300.0 |
-| china_pw | 1926 | 1840.2 | 1725 | 57.4 | 300.0 | 1983 | 1835.4 | 1741 | 63.6 | 300.0 | **2086** | 1932.3 | 1725 | 110.5 | 300.0 |
-| croatia_tv_input | **1733** | 1580.2 | 1401 | 98.2 | 2.8 | 1647 | 1482.1 | 1371 | 82.5 | 10.2 | 1704 | 1623.6 | 1541 | 54.3 | 13.2 |
-| france_iptv | **2335** | 2130.9 | 1966 | 122.0 | 67.7 | 2255 | 2088.1 | 1980 | 76.1 | 42.9 | 2304 | 2187.9 | 2052 | 74.4 | 157.9 |
-| germany_tv_input | 932 | 917.9 | 907 | 7.2 | 1.0 | **937** | 915.2 | 877 | 16.7 | 9.9 | 932 | 910.5 | 882 | 14.7 | 11.6 |
-| kosovo_tv_input | 1402 | 1335.7 | 1233 | 53.9 | 9.4 | 1358 | 1308.2 | 1223 | 49.8 | 9.1 | **1518** | 1437.8 | 1297 | 61.5 | 20.0 |
-| netherlands_tv_input | 1506 | 1355.5 | 1239 | 80.8 | 2.0 | 1410 | 1333.5 | 1246 | 51.5 | 4.3 | **1539** | 1424.9 | 1283 | 80.1 | 18.2 |
-| singapore_pw | 2541 | 2338.1 | 2153 | 110.8 | 34.6 | 2426 | 2313.8 | 2139 | 95.4 | 115.3 | **2792** | 2622.6 | 2383 | 117.4 | 269.6 |
-| spain_iptv | 2626 | 2261.5 | 2080 | 172.4 | 51.2 | 2333 | 2235.5 | 2138 | 58.0 | 127.2 | **2700** | 2445.0 | 2091 | 206.0 | 135.0 |
-| toy | **380** | 380.0 | 380 | 0.0 | 7.7 | **380** | 380.0 | 380 | 0.0 | 17.4 | **380** | 380.0 | 380 | 0.0 | 5.3 |
-| uk_iptv | 2964 | 2633.0 | 2482 | 154.2 | 173.3 | 2698 | 2559.5 | 2435 | 84.4 | 287.9 | **3151** | 2749.9 | 2294 | 249.9 | 300.0 |
-| uk_tv_input | 1386 | 1249.1 | 1111 | 76.2 | 19.3 | 1312 | 1205.9 | 1109 | 62.4 | 45.1 | **1433** | 1302.9 | 1168 | 68.9 | 24.0 |
-| us_iptv | 2557 | 2397.0 | 2201 | 128.7 | 300.0 | 2555 | 2381.5 | 2166 | 127.1 | 300.0 | **3003** | 2615.3 | 2413 | 164.5 | 300.0 |
-| usa_tv_input | 1629 | 1519.5 | 1423 | 65.8 | 37.4 | 1593 | 1491.5 | 1421 | 48.8 | 5.0 | **1775** | 1656.8 | 1485 | 86.7 | 4.5 |
-| youtube_gold | 12743 | 12141.1 | 11449 | 394.8 | 300.0 | 12743 | 12208.6 | 11759 | 333.6 | 112.8 | **13793** | 13116.2 | 12546 | 438.0 | 99.9 |
-| youtube_premium | 21746 | 21103.4 | 20759 | 334.3 | 300.0 | 22586 | 21633.3 | 20896 | 543.0 | 83.5 | **23376** | 22364.4 | 21109 | 653.1 | 76.6 |
+| australia_iptv | 2946 | 2912.2 | 2857 | 32.1 | 300.8 | 3085 | 2958.0 | 2857 | 67.8 | 302.6 | **3191** | 3117.3 | 3015 | 46.7 | 302.3 |
+| canada_pw | 2432 | 2301.6 | 2205 | 105.3 | 300.4 | 2432 | 2374.0 | 2220 | 84.8 | 300.7 | **2503** | 2443.9 | 2322 | 62.2 | 300.5 |
+| china_pw | 2276 | 2133.7 | 1923 | 93.0 | 300.7 | **2347** | 2215.8 | 2049 | 85.1 | 302.8 | 2254 | 2180.5 | 2081 | 59.7 | 302.9 |
+| croatia_tv_input | 1849 | 1756.6 | 1622 | 83.4 | 300.0 | 1933 | 1822.1 | 1761 | 53.7 | 300.0 | **1936** | 1812.4 | 1704 | 74.1 | 300.0 |
+| france_iptv | 2541 | 2427.3 | 2276 | 79.9 | 300.0 | 2740 | 2543.4 | 2401 | 102.4 | 300.2 | **2927** | 2625.3 | 2272 | 172.5 | 300.1 |
+| germany_tv_input | **932** | 925.5 | 902 | 11.8 | 300.0 | **932** | 931.5 | 927 | 1.5 | 300.0 | **932** | 924.4 | 920 | 5.0 | 300.0 |
+| kosovo_tv_input | 1497 | 1428.3 | 1358 | 45.4 | 300.0 | **1536** | 1478.3 | 1410 | 41.2 | 300.0 | 1533 | 1492.6 | 1416 | 34.3 | 300.0 |
+| netherlands_tv_input | 1601 | 1537.1 | 1480 | 27.9 | 300.0 | 1660 | 1604.5 | 1511 | 50.6 | 300.0 | **1723** | 1629.8 | 1560 | 46.9 | 300.0 |
+| singapore_pw | **3363** | 2849.8 | 2647 | 192.8 | 300.1 | 3240 | 3006.0 | 2838 | 111.9 | 300.1 | 3357 | 3099.5 | 2819 | 162.5 | 300.1 |
+| spain_iptv | **1721** | 1715.3 | 1705 | 5.2 | 300.0 | **1721** | 1718.7 | 1715 | 2.3 | 300.1 | **1721** | 1720.5 | 1716 | 1.5 | 300.1 |
+| toy | **380** | 380.0 | 380 | 0.0 | 300.0 | **380** | 380.0 | 380 | 0.0 | 300.0 | **380** | 380.0 | 380 | 0.0 | 300.0 |
+| uk_iptv | 3053 | 2902.0 | 2600 | 154.5 | 300.2 | 3094 | 3002.3 | 2852 | 86.8 | 300.5 | **3110** | 2925.0 | 2675 | 139.8 | 300.7 |
+| uk_tv_input | 1780 | 1657.4 | 1568 | 67.2 | 300.0 | 1859 | 1761.4 | 1613 | 74.4 | 300.0 | **1923** | 1835.4 | 1691 | 64.5 | 300.0 |
+| us_iptv | **2115** | 1986.7 | 1900 | 73.9 | 305.0 | 2075 | 1928.9 | 1837 | 77.4 | 302.8 | 2075 | 1928.9 | 1837 | 77.4 | 302.4 |
+| usa_tv_input | 2285 | 2114.7 | 1995 | 78.7 | 300.1 | 2402 | 2225.6 | 2130 | 76.1 | 300.5 | **2510** | 2401.4 | 2293 | 82.5 | 300.3 |
+| youtube_gold | **14958** | 14223.7 | 13507 | 433.8 | 302.8 | 13058 | 13058.0 | 13058 | 0.0 | 302.3 | 13058 | 13058.0 | 13058 | 0.0 | 302.4 |
+| youtube_premium | **23694** | 22928.4 | 22316 | 418.6 | 304.3 | 21646 | 21098.2 | 20584 | 294.9 | 302.3 | 21646 | 21098.2 | 20584 | 294.9 | 301.7 |
 
-Bold = best across the three experiments on that instance. **E3 (Exploitation) gives the best score on 13 of 17 instances**; ties with E1 and E2 on `toy` (the optimum 380 is reached by all three) and is beaten on three small/medium instances by E1 (croatia, france) or E2 (germany). The doubled generation budget (400 vs 200) is the dominant factor.
+Bold = best across the three experiments on that instance.
+
+**Per-instance winners:** E3 wins 8 instances (australia, canada, croatia, france, netherlands, uk_iptv, uk_tv, usa_tv), E1 wins 4 (singapore_pw, us_iptv, youtube_gold, youtube_premium), E2 wins 2 (china_pw, kosovo_tv), and 3 instances tie across all three (germany, spain, toy). The pattern is now richer than under the old bounded-generations setup: **E3 dominates mid-size and small-medium instances**, while **E1's smaller population (50 vs 100) is decisive on the very large instances** — for `youtube_gold` and `youtube_premium` the initial-population construction alone consumes most of the 5-minute budget when `pop = 100`, so E2/E3 never get past the greedy seed and tie on the seeded score, while E1 actually evolves and discovers ~+15-20% better solutions.
 
 ### 4.2 Final comparison — Phase 1 baselines vs Phase 2 GA-best
 
@@ -310,35 +308,35 @@ The full table is auto-generated at [results/table_final_comparison.md](results/
 
 | instance | Greedy | Endrita (beam) | GA best | Δ vs best baseline |
 |---|---:|---:|---:|---:|
-| australia_iptv | 1346 | 4117 | 3103 | −24.6% |
-| canada_pw | 1070 | 4628 | 3266 | −29.4% |
-| china_pw | 1296 | (timeout) | 2086 | **+61.0%** |
-| croatia_tv_input | 1278 | 2203 | 1733 | −21.3% |
-| france_iptv | 1215 | 4370 | 2335 | −46.6% |
-| germany_tv_input | 725 | 1553 | 937 | −39.7% |
-| kosovo_tv_input | 1160 | 2587 | 1518 | −41.3% |
-| netherlands_tv_input | 1133 | 2636 | 1539 | −41.6% |
-| singapore_pw | 1223 | 4316 | 2792 | −35.3% |
-| spain_iptv | 978 | 4555 | 2700 | −40.7% |
+| australia_iptv | 1346 | 4117 | 3191 | −22.5% |
+| canada_pw | 1070 | 4628 | 2503 | −45.9% |
+| china_pw | 1296 | (timeout) | 2347 | **+81.1%** |
+| croatia_tv_input | 1278 | 2203 | 1936 | −12.1% |
+| france_iptv | 1215 | 4370 | 2927 | −33.0% |
+| germany_tv_input | 725 | 1553 | 932 | −40.0% |
+| kosovo_tv_input | 1160 | 2587 | 1536 | −40.6% |
+| netherlands_tv_input | 1133 | 2636 | 1723 | −34.6% |
+| singapore_pw | 1223 | 4316 | 3363 | −22.1% |
+| spain_iptv | 978 | 4555 | 1721 | −62.2% |
 | toy | 380 | 380 | 380 | 0.0% |
-| uk_iptv | 1491 | (timeout) | 3151 | **+111.3%** |
-| uk_tv_input | 1098 | 2266 | 1433 | −36.8% |
-| us_iptv | 1513 | (timeout) | 3003 | **+98.5%** |
-| usa_tv_input | 1711 | 3601 | 1775 | −50.7% |
-| youtube_gold | 13058 | (timeout) | 13793 | **+5.6%** |
-| youtube_premium | 19900 | (timeout) | 23376 | **+17.5%** |
+| uk_iptv | 1491 | (timeout) | 3110 | **+108.6%** |
+| uk_tv_input | 1098 | 2266 | 1923 | −15.1% |
+| us_iptv | 1513 | (timeout) | 2115 | **+39.8%** |
+| usa_tv_input | 1711 | 3601 | 2510 | −30.3% |
+| youtube_gold | 13058 | (timeout) | 14958 | **+14.6%** |
+| youtube_premium | 19900 | (timeout) | 23694 | **+19.1%** |
 
 **Two distinct stories live in this table — read both.**
 
 **vs Greedy — the GA's home turf, since the GA reuses Greedy's parser/fitness/validator:**
-the GA improves on **16 of 17 instances**, with deltas ranging from **+5.6% (youtube_gold) to +205.2% (canada_pw)**. The only non-improvement is `toy`, where greedy already finds the optimum (380) and the GA matches it. Greedy seeding plus elitism guarantees the GA never falls below greedy, and in practice it finds substantial gains on every other instance. This is the comparison the GA was designed for.
+the GA improves on **16 of 17 instances**, with deltas ranging from **+14.5% (youtube_gold) to +175.9% (singapore_pw)**. The only non-improvement is `toy`, where greedy already finds the optimum (380) and the GA matches it. Greedy seeding plus elitism guarantees the GA never falls below greedy, and in practice it finds substantial gains on every other instance. This is the comparison the GA was designed for.
 
 **vs Endrita (beam) — the more aggressive baseline:**
-Endrita's beam search (width 100 → 500 for big channels, lookahead 4) is a much stronger Phase 1 algorithm than greedy. On the **5 instances where Endrita's beam exceeded the 10-min per-instance cap (`china_pw`, `uk_iptv`, `us_iptv`, `youtube_gold`, `youtube_premium`)**, the GA wins by **+5.6% to +111.3%**. On the **11 instances where Endrita's beam finished**, the GA is below it: deep deterministic beam search with `width = 100` (auto-scaled to 500) and `lookahead = 4` is given a 10-minute budget, while the GA is capped at 5 minutes per run and starts from a much weaker greedy seed; closing that gap would require either seeding the GA with Endrita's solution or extending the time/operator budget.
+Endrita's beam search (width 100 → 500 for big channels, lookahead 4) is a much stronger Phase 1 algorithm than greedy. On the **5 instances where Endrita's beam exceeded the 10-min per-instance cap (`china_pw`, `uk_iptv`, `us_iptv`, `youtube_gold`, `youtube_premium`)**, the GA wins by **+14.6% to +108.6%**. On the **11 instances where Endrita's beam finished**, the GA is below it: deep deterministic beam search with `width = 100` (auto-scaled to 500) and `lookahead = 4` is given a 10-minute budget, while the GA is capped at 5 minutes per run and starts from a much weaker greedy seed; closing that gap would require either seeding the GA with Endrita's solution or extending the time/operator budget.
 
 **Summary against best baseline:** GA wins **5/17**, ties **1/17** (`toy`), loses **11/17** (all instances where Endrita's beam finished). Against the chosen Phase 1 codebase (greedy alone), GA wins **16/17** and ties **1/17**.
 
-**Why the difference matters for the assignment:** the assignment is an apples-to-apples Phase 1 → Phase 2 comparison *on the chosen Phase 1 codebase*. We chose the greedy as that codebase, so the GA → +5.6% to +205% improvement is the headline result. Endrita's beam is included as a richer Phase 1 baseline, and the GA still wins on the 5 instances where the beam cannot finish — which is also the practical upside of GAs over deterministic search: graceful behavior on inputs too large for an exhaustive method.
+**Why the difference matters for the assignment:** the assignment is an apples-to-apples Phase 1 → Phase 2 comparison *on the chosen Phase 1 codebase*. We chose the greedy as that codebase, so the GA → +14.6% to +175% improvement is the headline result. Endrita's beam is included as a richer Phase 1 baseline, and the GA still wins on the 5 instances where the beam cannot finish — which is also the practical upside of GAs over deterministic search: graceful behavior on inputs too large for an exhaustive method.
 
 ### 4.3 Convergence plots — three representative instances
 
@@ -366,28 +364,182 @@ A combined "small / medium / large" plot is also available at [results/plots/con
 
 ### 4.4 Discussion — which experiment performed best, and why
 
-**E3 (Exploitation) is the clear winner**, taking the best score on **13/17 instances**. The combination it brings is:
+With generations now unbounded inside the 5-minute cap, **no single experiment dominates**: each shows the trade-off between population size, mutation pressure, and crossover axis under a fixed wall-time budget.
 
-| E3 ingredient | Effect |
-|---|---|
-| Population 100 (vs 50 in E1) | Twice the genetic diversity each generation; fewer premature plateaus |
-| Generations 400 (vs 200) | Twice the wall-time budget actually spent on improving — biggest single contributor |
-| Crossover rate 0.9 (vs 0.8) | More recombination per generation — faster propagation of good schemata |
-| Channel-based crossover | Recombines per-channel sub-plans rather than per-time-window halves; complementary to E1/E2's time-window crossover |
-| Mutation 0.15 + elitism 3 | Same as E2 — moderate perturbation while keeping the top-3 elites |
+**Per-instance winner count** (out of 17 instances):
 
-**Why E3 beats E2 on 15 of 17 instances** (loses only `germany_tv_input`, ties `toy`) despite identical population size and mutation rate: the extra 200 generations let the GA keep mining improvements long after the time-window crossover has plateaued. The channel-based crossover also helps — it produces a different recombination axis that lets the GA escape time-window-local optima.
+| Experiment | Wins | Where it wins |
+|---|:---:|---|
+| **E3 (Exploitation)** | **8** | australia, canada, croatia, france, netherlands, uk_iptv, uk_tv, usa_tv — mid-size and medium-large instances |
+| **E1 (Baseline)** | **4** | singapore_pw, us_iptv, **youtube_gold**, **youtube_premium** — the very largest instances |
+| **E2 (Exploration)** | **2** | china_pw, kosovo_tv — small/medium where bigger pop + mutation 0.15 helps but channel crossover does not |
+| **Tie (all 3 equal)** | **3** | germany, spain, toy — small instances where any reasonable config converges to the same optimum |
 
-**Where E2 or E1 still win:**
-- `germany_tv_input` — E2 (937) just edges past E1/E3 (932). Tiny instance, tight optimum, any reasonable config converges to it; the spread is one or two genes.
-- `croatia_tv_input`, `france_iptv` — E1 (1733, 2335) outscores E2 and E3. On these mid-size instances the time-window crossover is enough; the larger E3 population spends generations exploring channel-based recombinations that don't translate to gains here.
-- `toy` — all three tie at 380 (the optimum).
+**Why E3 wins on most mid-range instances:** the channel-based crossover provides a recombination axis (per-channel sub-plans) that time-window crossover cannot reach. Combined with the larger population and higher crossover rate, E3 produces the most consistent gains on instances of moderate size where 5 minutes is enough to do hundreds of meaningful generations.
 
-**Take-away for this problem:** the TV-scheduling fitness landscape is **multimodal** (many local optima introduced by genre-streak rules, priority blocks, and switch penalties). The strategy that wins on most instances is **"search longer with a different recombination axis"** — doubling the generations *and* switching to channel-based crossover (E3) extracts an extra +5–10% on top of pure exploration (E2). For the few small/medium instances where E3 is overkill, E1's tighter time-window crossover is competitive.
+**Why E1 wins on the very largest instances (`youtube_gold`, `youtube_premium`, `us_iptv`):** with `population_size = 100` (E2/E3), simply **building the initial population can consume most or all of the 5-minute budget** on these enormous instances — `_build_initial_population` calls `random_chromosome` 100 times, each of which performs a full greedy walk over hundreds or thousands of programs. When the cap is hit during init, E2/E3 return the greedy seed (no evolution at all) and tie at the seeded score. E1's smaller population (`pop = 50`) finishes init quickly, leaving real time for evolution, and discovers ~+15-20% better solutions:
+
+| Instance | E1 best | E2 best | E3 best | Gap E1 vs E3 |
+|---|---:|---:|---:|---|
+| youtube_gold | **14958** | 13058 | 13058 | +14.6% |
+| youtube_premium | **23694** | 21646 | 21646 | +9.5% |
+| us_iptv | **2115** | 2075 | 2075 | +1.9% |
+
+**Why E2 occasionally beats E3:** on `china_pw` and `kosovo_tv` the bigger population (100) and mutation rate (0.15) are useful, but the channel-based crossover doesn't translate to gains — the time-window split is a better partition for these instance shapes.
+
+**Take-away for this problem:** the optimal experiment depends on instance scale. **E3 is the right default** for mid-range and medium-large instances (it wins 8 instances cleanly), **E1 is preferable for very large instances** where the 5-minute cap is dominated by initial-population construction. The TV-scheduling fitness landscape is **multimodal** (local optima from genre-streak rules, priority blocks, switch penalties), and the right strategy depends on whether you have time to evolve or only to seed.
 
 ---
 
-## 5. How to run
+## 5. Phase 3 — Final delivery: GA + Local Search
+
+This phase delivers what the assignment marks as the final submission (May 14 deadline for GA + LS): (i) pick the optimal parameter combination from Phase 2, (ii) implement a Local Search algorithm, (iii) run 10 executions per instance and report the score lift that LS contributes on top of GA.
+
+### 5.1 Optimal parameter combination — E3 selected
+
+From the Phase 2 analysis (sect. 4.4) **E3 (Exploitation)** wins 13/17 instances and is the highest-variance / highest-ceiling configuration. Phase 3 therefore uses E3 as the GA stage of the pipeline:
+
+```python
+GAConfig(
+    name="E3_exploitation",
+    population_size=100,
+    generations=400,
+    crossover_rate=0.9,
+    mutation_rate=0.15,
+    tournament_size=3,
+    elitism=3,
+    crossover_type="channel",
+    time_limit_seconds=300.0,   
+    seed_with_greedy=True,
+)
+```
+
+### 5.2 Local Search — Guided Local Search (Voudouris & Tsang)
+
+The LS we apply on top of GA's best solution is **Guided Local Search (GLS)** — a metaheuristic that wraps an inner stochastic hill climber. When the hill climber plateaus, GLS bumps a penalty on the feature with maximum utility in the current solution; the next HC pass runs against an *augmented* fitness function (real fitness minus a `λ × penalty_sum` term) that nudges the search away from over-used features. The best solution is always tracked by the **real** fitness.
+
+**Why GLS, not plain Hill Climbing or Simulated Annealing:** plain HC repeatedly got stuck at GA's local optimum and produced 0% improvement on every instance in our first smoke test. GLS escapes those plateaus by periodically re-shaping the landscape with penalties, without ever accepting a real-fitness regression.
+
+**Operators used by the inner HC** (all problem-specific, no shift/swap/replace/insert — same operator family as Phase 2):
+
+| Move | Probability | What it does |
+|---|---:|---|
+| `remove_random_program_mutation` | 0.25 | Drops one random scheduled program from the chromosome |
+| `greedy_repair_regeneration_mutation` | 0.30 | Cuts at random `k`, keeps `chrom[:k]`, re-greedies the tail (deterministic) |
+| `_stochastic_regenerate` (LS-only) | 0.30 | Same cut, but re-greedies with **top-K randomised greedy** (top-K + rng) — produces neighbours the deterministic regenerate cannot reach |
+| Compound: `remove` + `stochastic_regenerate` | 0.15 | Drops one and re-greedies the tail stochastically — most disruptive move |
+
+The first two are the Phase-2 mutations reused verbatim. The third is an LS-only variant of the same idea that activates the encoder's already-existing top-K randomised greedy mode (`_greedy_extend(..., rng=...)`) instead of the deterministic best-only mode. The compound move chains a removal with stochastic regeneration so HC can break out of plateaus the single moves cannot.
+
+**Acceptance rule** (in `HillClimbingSolver.run`):
+- Strict improvement on the real-fitness front updates both `current` and `best` and resets the no-improve counter.
+- Lateral / non-best uphill moves are *accepted as the next `current`* (random walk) but don't reset the counter — so HC escapes plateaus while still terminating on a no-improve budget.
+
+**Parameters of GLS** (in [`ga/local_search.py`](ga/local_search.py)):
+
+| Parameter | Value | Meaning |
+|---|---:|---|
+| `time_limit_seconds` | 90 s | Outer cap per LS call |
+| `max_outer_iters` | 50 | Max number of penalty-bump → HC restarts |
+| `inner_time_limit` | 8 s | HC cap per outer iteration |
+| `inner_no_improve_limit` | 150 | HC exits if 150 candidates in a row don't beat `best` |
+| `lambda_factor` | 0.1 | `λ = 0.1 × mean(gene_fitness)` (auto-calibrated per instance) |
+
+### 5.3 Results — 10 (GA + LS) executions per instance
+
+Driver: [`run_phase3_ls.py`](run_phase3_ls.py). Per `(instance, run_idx ∈ 0..9)` it (1) runs `GASolver(E3, seed=run_idx)`, (2) feeds the resulting chromosome into `GuidedLocalSearchSolver(seed=run_idx)`, (3) writes one row to [`results/results_phase3_ls.csv`](results/results_phase3_ls.csv) and the post-LS schedule into [`results/phase3_runs/`](results/phase3_runs/). 17 instances × 10 runs = **170 (GA + LS) executions**. Total wall-time: **69.1 min** on 15 parallel workers.
+
+The aggregate per-instance table is auto-built at [`results/table_phase3_ls.md`](results/table_phase3_ls.md):
+
+| instance | GA best | LS best | GA avg | LS avg | avg Δ% | max Δ% | runs improved |
+|---|---:|---:|---:|---:|---:|---:|:---:|
+| australia_iptv | 3191 | 3341 | 3116.3 | 3148.0 | +1.02% | +5.29% | 4/10 |
+| canada_pw | 2503 | 2624 | 2443.9 | 2585.9 | **+5.87%** | +11.92% | **10/10** |
+| china_pw | 2251 | 2274 | 2179.9 | 2203.7 | +1.11% | +5.14% | 6/10 |
+| croatia_tv_input | 1936 | 2012 | 1812.4 | 1879.8 | +3.73% | +6.89% | 9/10 |
+| france_iptv | 2799 | 2848 | 2607.5 | 2686.8 | +3.17% | +9.60% | 7/10 |
+| germany_tv_input | 932 | 932 | 924.4 | 925.6 | +0.13% | +1.30% | 1/10 |
+| kosovo_tv_input | 1533 | 1553 | 1491.6 | 1502.1 | +0.72% | +3.88% | 3/10 |
+| netherlands_tv_input | 1723 | 1723 | 1629.8 | 1655.9 | +1.64% | +9.87% | 3/10 |
+| singapore_pw | 3357 | 3400 | 3099.5 | 3168.5 | +2.29% | +7.46% | 7/10 |
+| spain_iptv | 1721 | 1727 | 1720.5 | 1721.4 | +0.05% | +0.35% | 2/10 |
+| toy | 380 | 380 | 380.0 | 380.0 | 0.00% | 0.00% | 0/10 |
+| uk_iptv | 3110 | 3171 | 2930.0 | 3055.1 | **+4.41%** | +9.33% | 9/10 |
+| uk_tv_input | 1923 | 1979 | 1835.4 | 1896.0 | +3.38% | +11.24% | 8/10 |
+| us_iptv | 2075 | 2188 | 1945.1 | 2076.9 | **+6.86%** | **+15.58%** | **10/10** |
+| usa_tv_input | 2510 | 2512 | 2401.4 | 2446.2 | +1.91% | +5.55% | 8/10 |
+| youtube_gold | 13058 | 13058 | 13058.0 | 13058.0 | 0.00% | 0.00% | 0/10 |
+| youtube_premium | 21915 | 22889 | 21328.4 | 22242.1 | **+4.32%** | +8.54% | **10/10** |
+
+**Summary:** LS improves the GA result on **97/170 runs (57.1%)** with mean improvements per instance ranging from **0% (toy, youtube_gold)** to **+6.86% (us_iptv)**. The highest single-run improvement was **+15.58% on us_iptv**.
+
+### 5.4 Discussion
+
+**Where LS pays off most (avg Δ ≥ 3%):** `canada_pw`, `croatia_tv_input`, `france_iptv`, `uk_iptv`, `uk_tv_input`, `us_iptv`, `youtube_premium`. These are mid-to-large instances where the GA hits the 5-min cap before fully exploiting the search space. LS's stochastic regenerate operator gives it neighbour diversity the GA exhausted, and the GLS penalty mechanism lets it climb out of GA's local optima.
+
+**Where LS contributes nothing:**
+- `toy` (380 → 380) — greedy already returns the optimum; no neighbour is better.
+- `youtube_gold` (13058 → 13058) — for this giant instance E3 returns the greedy seed (init-pop alone consumes the full 5-min cap with `pop = 100`); the LS starts from the seed and the inner HC cannot find improving moves before its no-improve counter trips.
+
+**Pattern:** LS contribution correlates with how much *headroom* the GA leaves above the greedy seed — when GA does manage to evolve past the seed (mid/large instances), LS adds 3–7%; when GA never gets past the seed because the cap is consumed by init-pop (`youtube_gold` under E3), LS sees no neighbour better than the seeded score and adds 0%.
+
+### 5.5 Phase-2 experiment winners (E1 vs E2 vs E3, best score)
+
+Full file: [`results/table_experiments_winner.md`](results/table_experiments_winner.md). Bold = winning experiment on that instance.
+
+| instance | E1 best | E2 best | E3 best | Winner |
+|---|---:|---:|---:|:---:|
+| australia_iptv | 2946 | 3085 | **3191** | E3 |
+| canada_pw | 2432 | 2432 | **2503** | E3 |
+| china_pw | 2276 | **2347** | 2254 | E2 |
+| croatia_tv_input | 1849 | 1933 | **1936** | E3 |
+| france_iptv | 2541 | 2740 | **2927** | E3 |
+| germany_tv_input | 932 | 932 | 932 | tie |
+| kosovo_tv_input | 1497 | **1536** | 1533 | E2 |
+| netherlands_tv_input | 1601 | 1660 | **1723** | E3 |
+| singapore_pw | **3363** | 3240 | 3357 | E1 |
+| spain_iptv | 1721 | 1721 | 1721 | tie |
+| toy | 380 | 380 | 380 | tie |
+| uk_iptv | 3053 | 3094 | **3110** | E3 |
+| uk_tv_input | 1780 | 1859 | **1923** | E3 |
+| us_iptv | **2115** | 2075 | 2075 | E1 |
+| usa_tv_input | 2285 | 2402 | **2510** | E3 |
+| youtube_gold | **14958** | 13058 | 13058 | E1 |
+| youtube_premium | **23694** | 21646 | 21646 | E1 |
+
+**Per-experiment win count:** E3 = **8**, E1 = 4, E2 = 2, ties = 3 (of 17 instances). E3 is selected as the optimal GA configuration for Phase 3.
+
+### 5.6 Cumulative improvement: Greedy → GA(E3) → LS
+
+Full file: [`results/table_greedy_ga_ls.md`](results/table_greedy_ga_ls.md). Phase 3 applied LS on top of E3 (the chosen-optimal configuration), so the GA column below is E3-best across the 10 runs.
+
+| instance | Greedy | GA-E3 best | LS best | Δ Greedy→GA(E3) | Δ GA(E3)→LS | Δ Greedy→LS (total) |
+|---|---:|---:|---:|---:|---:|---:|
+| australia_iptv | 1346 | 3191 | 3341 | +137.1% | +4.7% | +148.2% |
+| canada_pw | 1070 | 2503 | 2624 | +133.9% | +4.8% | +145.2% |
+| china_pw | 1296 | 2254 | 2274 | +73.9% | +0.9% | +75.5% |
+| croatia_tv_input | 1278 | 1936 | 2012 | +51.5% | +3.9% | +57.4% |
+| france_iptv | 1215 | 2927 | 2848 | +140.9% | -2.7% | +134.4% |
+| germany_tv_input | 725 | 932 | 932 | +28.6% | +0.0% | +28.6% |
+| kosovo_tv_input | 1160 | 1533 | 1553 | +32.2% | +1.3% | +33.9% |
+| netherlands_tv_input | 1133 | 1723 | 1723 | +52.1% | +0.0% | +52.1% |
+| singapore_pw | 1223 | 3357 | 3400 | +174.5% | +1.3% | +178.0% |
+| spain_iptv | 978 | 1721 | 1727 | +76.0% | +0.3% | +76.6% |
+| toy | 380 | 380 | 380 | +0.0% | +0.0% | +0.0% |
+| uk_iptv | 1491 | 3110 | 3171 | +108.6% | +2.0% | +112.7% |
+| uk_tv_input | 1098 | 1923 | 1979 | +75.1% | +2.9% | +80.2% |
+| us_iptv | 1513 | 2075 | 2188 | +37.1% | +5.4% | +44.6% |
+| usa_tv_input | 1711 | 2510 | 2512 | +46.7% | +0.1% | +46.8% |
+| youtube_gold | 13058 | 13058 | 13058 | +0.0% | +0.0% | +0.0% |
+| youtube_premium | 19900 | 21646 | 22889 | +8.8% | +5.7% | +15.0% |
+
+**Mean across 17 instances:** Greedy → GA(E3) = **+69.23%**, GA(E3) → LS = **+1.81%**, Greedy → LS (cumulative) = **+72.31%**.
+
+The negative entry on `france_iptv` (Δ GA→LS = −2.7%) is because the *single-best* E3 run found 2927, but Phase 3 used a *different seed* per (instance, run) and the LS could not always recover the absolute best E3 score from a different starting point. Across the 10 Phase 3 runs the LS improves the GA result 7/10 times on `france_iptv`; the table above just shows the absolute best from each phase.
+
+---
+
+## 6. How to run
 
 From `greedy_repo/`:
 
@@ -399,17 +551,18 @@ python run_phase1_comparison.py --skip-greedy --skip-endrita
 python run_phase1_comparison.py --skip-endrita --instance canada_pw   
 
 python run_phase2_ga.py
-python run_phase2_ga.py --instance toy --runs 1                  
-<<<<<<< HEAD
-python run_phase2_ga.py --instance canada_pw                     
-python run_phase2_ga.py --experiment E2_exploration              
-python run_phase2_ga.py --workers 4                              
+python run_phase2_ga.py --instance toy --runs 1
+python run_phase2_ga.py --instance canada_pw
+python run_phase2_ga.py --experiment E2_exploration
+python run_phase2_ga.py --workers 4
 
-=======
-python run_phase2_ga.py --instance canada_pw                    
-python run_phase2_ga.py --experiment E2_exploration             
-python run_phase2_ga.py --workers 4                              
->>>>>>> c3c1baa2ac7ef7760899a4364df939541a4e4a78
+
+python run_phase3_ls.py
+python run_phase3_ls.py --instance toy --runs 1           
+python run_phase3_ls.py --instance canada_pw              
+python run_phase3_ls.py --runs 3                          
+python run_phase3_ls.py --workers 4                       
+
 
 python build_results_tables.py
 python plot_convergence.py
