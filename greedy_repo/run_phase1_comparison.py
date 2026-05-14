@@ -70,7 +70,6 @@ def run_greedy(instance_filter: str | None = None) -> None:
         w.writerows(rows)
     print(f"[Greedy] wrote {GREEDY_CSV}")
 
-
 def run_endrita_beam() -> bool:
     """Run Endrita's beam search via subprocess. Returns True if endrita CSV ends up in results/."""
     endrita_runner = ENDRITA_REPO / "run_batch.py"
@@ -97,7 +96,6 @@ def run_endrita_beam() -> bool:
         print(f"[Endrita / BeamSearch] moved CSV -> {ENDRITA_CSV}")
         return True
     return ENDRITA_CSV.exists()
-
 
 def _load_score_map(path: Path, score_col: str) -> dict[str, int]:
     out: dict[str, int] = {}
@@ -172,7 +170,6 @@ def main() -> None:
     if not args.skip_endrita and not args.instance:
         run_endrita_beam()
     build_comparison()
-
 
 if __name__ == "__main__":
     main()

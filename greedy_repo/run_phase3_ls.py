@@ -92,7 +92,6 @@ def run_one_task(args):
         "ls_time_seconds": round(ls_result.time_seconds, 3),
     }
 
-
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--instance", help="restrict to a single instance stem")
@@ -143,7 +142,6 @@ def main() -> None:
         w.writeheader()
         w.writerows(rows)
     print(f"Wrote {len(rows)} rows to {CSV_PATH}")
-
 
 if __name__ == "__main__":
     mp.freeze_support()
