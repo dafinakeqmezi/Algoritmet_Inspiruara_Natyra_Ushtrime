@@ -508,7 +508,6 @@ Full file: [`results/table_experiments_winner.md`](results/table_experiments_win
 | youtube_premium | **23694** | 21646 | 21646 | E1 |
 
 **Per-experiment win count:** E3 = **8**, E1 = 4, E2 = 2, ties = 3 (of 17 instances). E3 is selected as the optimal GA configuration for Phase 3.
-
 ### 5.6 Cumulative improvement: Greedy → GA(E3) → LS
 
 Full file: [`results/table_greedy_ga_ls.md`](results/table_greedy_ga_ls.md). Phase 3 applied LS on top of E3 (the chosen-optimal configuration), so the GA column below is E3-best across the 10 runs.
@@ -567,5 +566,4 @@ python run_phase3_ls.py --workers 4
 python build_results_tables.py
 python plot_convergence.py
 ```
-
 Dependencies: `python >= 3.9`, `tqdm`, `matplotlib`. Everything else is standard library.
