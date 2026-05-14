@@ -32,7 +32,6 @@ class SolutionSerializer:
         data = {
             "scheduled_programs": schedules
         }
-
         try:
             with open(output_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=4, ensure_ascii=False)

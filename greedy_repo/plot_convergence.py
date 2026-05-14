@@ -43,7 +43,6 @@ def load_history_runs(instance: str, exp_tag: str) -> list[tuple[list[int], list
             runs.append((gens, best, avg))
     return runs
 
-
 def aggregate_across_runs(runs: list[tuple[list[int], list[int], list[float]]]):
     """Return common gens + per-gen mean/min/max of best_score across runs (truncate
     to the shortest run)."""
@@ -81,7 +80,6 @@ def instance_size(instance_stem: str) -> int:
     except Exception:
         return 0
 
-
 def plot_one_instance(instance: str, ax=None) -> bool:
     own_fig = ax is None
     if own_fig:
@@ -114,7 +112,6 @@ def plot_one_instance(instance: str, ax=None) -> bool:
         print(f"wrote {out}")
     return plotted
 
-
 def representative_set(all_instances: list[str]) -> list[str]:
     sized = [(inst, instance_size(inst)) for inst in all_instances]
     sized = [s for s in sized if s[1] > 0]
@@ -123,7 +120,6 @@ def representative_set(all_instances: list[str]) -> list[str]:
     sized.sort(key=lambda x: x[1])
     n = len(sized)
     return [sized[0][0], sized[n // 2][0], sized[-1][0]]
-
 
 def main():
     PLOTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -146,7 +142,6 @@ def main():
     fig.savefig(out, dpi=130)
     plt.close(fig)
     print(f"wrote {out}")
-
 
 if __name__ == "__main__":
     main()

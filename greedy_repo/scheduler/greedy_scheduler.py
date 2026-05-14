@@ -45,11 +45,9 @@ class GreedyScheduler:
                 time += 1
                 continue
 
-
             schedule = Schedule(program_id=channel_program.program_id, channel_id=best_channel.channel_id,
                                 start=channel_program.start, end=channel_program.end, fitness=fitness,
                                 unique_program_id=channel_program.unique_id)
-
             solution.append(schedule)
             time = channel_program.end
             total_score += fitness

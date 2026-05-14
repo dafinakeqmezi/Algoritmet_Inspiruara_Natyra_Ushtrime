@@ -10,7 +10,6 @@ from utils.utils import Utils
 from scheduler.upper_bound_greedy import UpperBoundGreedy
 import argparse
 
-
 def main():
     parser_arg = argparse.ArgumentParser(description="Run TV scheduling algorithms")
 
@@ -156,7 +155,6 @@ def main():
     serializer.serialize(solution)
 
     print("✓ Solution saved to output file")
-
 
 if __name__ == "__main__":
     main()
